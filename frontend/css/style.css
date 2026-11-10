@@ -1,0 +1,803 @@
+
+/* ========================================
+   1. GLOBAL RESET
+======================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #d1d7db;
+    color: #111b21;
+    height: 100vh;
+    overflow: hidden;
+}
+
+
+/* ========================================
+   2. MAIN APPLICATION
+======================================== */
+
+.app-container {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    background: #ffffff;
+}
+
+
+/* ========================================
+   3. SIDEBAR
+======================================== */
+
+.sidebar {
+    width: 30%;
+    min-width: 300px;
+    max-width: 450px;
+    background: #ffffff;
+    border-right: 1px solid #d1d7db;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    height: 65px;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f0f2f5;
+}
+
+.sidebar-header h2 {
+    font-size: 21px;
+    font-weight: 600;
+}
+
+.sidebar-header button {
+    border: none;
+    background: transparent;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+
+/* ========================================
+   4. SEARCH BAR
+======================================== */
+
+.search-container {
+    padding: 12px;
+    background: #ffffff;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 11px 15px;
+    border: none;
+    outline: none;
+    border-radius: 8px;
+    background: #f0f2f5;
+    font-size: 14px;
+}
+
+
+/* ========================================
+   5. CHAT LIST
+======================================== */
+
+.chat-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.chat-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 13px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f2f5;
+    transition: background 0.2s;
+}
+
+.chat-item:hover {
+    background: #f5f6f6;
+}
+
+.chat-item.active {
+    background: #f0f2f5;
+}
+
+.profile-avatar {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: 50%;
+    background: #dfe5e7;
+    color: #54656f;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 21px;
+    font-weight: bold;
+}
+
+.chat-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.chat-info h3 {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.chat-info p {
+    font-size: 13px;
+    color: #667781;
+}
+
+
+/* ========================================
+   6. MAIN CHAT SECTION
+======================================== */
+
+.chat-section {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: #efeae2;
+}
+
+
+/* ========================================
+   7. CHAT HEADER
+======================================== */
+
+.chat-header {
+    height: 65px;
+    min-height: 65px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: #f0f2f5;
+    border-bottom: 1px solid #d1d7db;
+}
+
+.header-info h3 {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.header-info p {
+    font-size: 12px;
+    color: #667781;
+}
+
+
+/* ========================================
+   8. MESSAGE CONTAINER
+======================================== */
+
+.message-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 25px 7%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+
+/* ========================================
+   9. DATE SEPARATOR
+======================================== */
+
+.date-separator {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+.date-separator span {
+    background: #ffffff;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #54656f;
+    box-shadow: 0 1px 2px #00000015;
+}
+
+
+/* ========================================
+   10. WELCOME MESSAGE
+======================================== */
+
+.welcome-message {
+    text-align: center;
+    margin: auto;
+    max-width: 400px;
+}
+
+.welcome-message h2 {
+    font-size: 23px;
+    margin-bottom: 12px;
+    color: #41525d;
+}
+
+.welcome-message p {
+    font-size: 14px;
+    color: #667781;
+    line-height: 1.6;
+}
+
+
+/* ========================================
+   11. CHAT FOOTER
+======================================== */
+
+.chat-footer {
+    min-height: 65px;
+    padding: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f0f2f5;
+}
+
+.chat-footer p {
+    font-size: 13px;
+    color: #667781;
+    text-align: center;
+}
+
+
+/* ========================================
+   12. SCROLLBAR
+======================================== */
+
+.message-container::-webkit-scrollbar,
+.chat-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.message-container::-webkit-scrollbar-thumb,
+.chat-list::-webkit-scrollbar-thumb {
+    background: #c5c5c5;
+    border-radius: 10px;
+}
+
+
+/* ========================================
+   13. RESPONSIVE DESIGN
+======================================== */
+
+@media (max-width: 768px) {
+
+    .sidebar {
+        width: 35%;
+        min-width: 130px;
+    }
+
+    .message-container {
+        padding: 20px 12px;
+    }
+
+    .chat-header {
+        padding: 0 12px;
+    }
+
+    .sidebar-header {
+        padding: 0 12px;
+    }
+
+}
+
+@media (max-width: 480px) {
+
+    .sidebar {
+        display: none;
+    }
+
+    .chat-section {
+        width: 100%;
+    }
+
+}
+
+/* ========================================
+   STEP 6: MESSAGE BUBBLE DESIGN
+======================================== */
+
+
+/* Message rows */
+
+.message-row {
+    display: flex;
+    width: 100%;
+    margin: 3px 0;
+}
+
+
+/* Incoming messages */
+
+.message-row.incoming {
+    justify-content: flex-start;
+}
+
+
+/* Outgoing messages */
+
+.message-row.outgoing {
+    justify-content: flex-end;
+}
+
+
+/* Common message bubble */
+
+.message-bubble {
+    max-width: 70%;
+    min-width: 100px;
+    padding: 9px 12px 7px;
+    border-radius: 9px;
+    box-shadow: 0 1px 1px #00000015;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+
+/* White incoming bubble */
+
+.incoming .message-bubble {
+    background: #ffffff;
+    border-top-left-radius: 0;
+}
+
+
+/* Green outgoing bubble */
+
+.outgoing .message-bubble {
+    background: #d9fdd3;
+    border-top-right-radius: 0;
+}
+
+
+/* Message text */
+
+.message-text {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #111b21;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+
+/* Timestamp */
+
+.message-time {
+    font-size: 10px;
+    color: #667781;
+    align-self: flex-end;
+}
+
+
+/* System notifications */
+
+.system-message {
+    align-self: center;
+    max-width: 85%;
+    background: #ffffff;
+    color: #54656f;
+    font-size: 12px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    text-align: center;
+    margin: 5px 0;
+    box-shadow: 0 1px 2px #00000010;
+}
+
+/* ========================================
+   STEP 7: SEARCH RESULTS
+======================================== */
+
+.no-results {
+    margin: auto;
+    padding: 20px;
+    background: #ffffff;
+    color: #667781;
+    border-radius: 10px;
+    font-size: 14px;
+    text-align: center;
+    box-shadow: 0 1px 2px #00000010;
+}
+
+/* ========================================
+   STEP 8: MESSAGE FILTER TOOLBAR
+======================================== */
+
+.filter-toolbar {
+    min-height: 52px;
+    padding: 8px 7%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f7f8fa;
+    border-bottom: 1px solid #d1d7db;
+}
+
+.filter-toolbar label {
+    font-size: 13px;
+    color: #54656f;
+}
+
+.filter-toolbar select {
+    padding: 8px 12px;
+    border: 1px solid #d1d7db;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #111b21;
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+}
+
+.filter-toolbar select:focus {
+    border-color: #00a884;
+}
+
+/* ========================================
+   STEP 9: DATE NAVIGATION
+======================================== */
+
+.filter-toolbar {
+    flex-wrap: wrap;
+}
+
+.filter-toolbar input[type="date"] {
+    padding: 8px 10px;
+    border: 1px solid #d1d7db;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #111b21;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+}
+
+.filter-toolbar input[type="date"]:focus {
+    border-color: #00a884;
+}
+
+#clearDateBtn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background: #e9edef;
+    color: #54656f;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#clearDateBtn:hover {
+    background: #d8dddf;
+}
+
+/* ==========================================
+   STEP 10.12: IMPORT CHAT INTERFACE
+========================================== */
+
+
+/* IMPORT BUTTON */
+
+.sidebar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#importChatBtn {
+    background: #075e54;
+    color: white;
+    border: none;
+    padding: 9px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s ease;
+}
+
+#importChatBtn:hover {
+    background: #128c7e;
+}
+
+
+/* HIDDEN ELEMENT */
+
+.hidden {
+    display: none !important;
+}
+
+
+/* MODAL BACKGROUND */
+
+.import-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    z-index: 1000;
+    padding: 20px;
+}
+
+
+/* MODAL CONTENT */
+
+.import-modal-content {
+    background: #ffffff;
+    width: 100%;
+    max-width: 460px;
+
+    padding: 25px;
+    border-radius: 14px;
+
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+
+/* MODAL HEADER */
+
+.import-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-bottom: 20px;
+}
+
+.import-modal-header h2 {
+    font-size: 21px;
+    color: #075e54;
+}
+
+#closeImportBtn {
+    border: none;
+    background: transparent;
+    font-size: 28px;
+    cursor: pointer;
+    color: #555;
+}
+
+
+/* FILE INPUT */
+
+#zipFileInput {
+    display: block;
+    width: 100%;
+    margin: 18px 0;
+    padding: 12px;
+
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+
+/* MODAL BUTTONS */
+
+#previewZipBtn,
+#confirmImportBtn,
+#cancelImportBtn {
+    padding: 11px 17px;
+    border: none;
+    border-radius: 8px;
+
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+
+    margin-top: 12px;
+}
+
+#previewZipBtn,
+#confirmImportBtn {
+    background: #075e54;
+    color: white;
+}
+
+#previewZipBtn:hover,
+#confirmImportBtn:hover {
+    background: #128c7e;
+}
+
+#cancelImportBtn {
+    background: #e9edef;
+    color: #333;
+    margin-left: 8px;
+}
+
+#cancelImportBtn:hover {
+    background: #d8dfe2;
+}
+
+
+/* PREVIEW INFORMATION */
+
+#previewSection {
+    margin-top: 20px;
+}
+
+#previewSection h3 {
+    color: #075e54;
+    margin-bottom: 12px;
+}
+
+#previewSection p {
+    margin: 10px 0;
+    color: #555;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+
+/* IMPORT STATUS */
+
+#importStatus {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #075e54;
+    overflow-wrap: anywhere;
+}
+
+
+/* RESPONSIVE MODAL */
+
+@media (max-width: 500px) {
+
+    .import-modal-content {
+        padding: 18px;
+    }
+
+    .import-modal-header h2 {
+        font-size: 18px;
+    }
+
+    .import-modal-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    #cancelImportBtn {
+        margin-left: 0;
+    }
+
+}
+
+
+
+/* ==========================================
+   CHAT IMAGE DISPLAY
+========================================== */
+
+.chat-image {
+    display: block;
+
+    width: 100%;
+    max-width: 300px;
+    max-height: 350px;
+
+    object-fit: contain;
+
+    border-radius: 8px;
+
+    margin-bottom: 6px;
+
+    cursor: pointer;
+}
+
+.message-bubble {
+    overflow: hidden;
+}
+
+.message-bubble .message-text {
+    overflow-wrap: anywhere;
+}
+
+
+/* ==========================================
+   IMAGE PREVIEW AND DOWNLOAD
+========================================== */
+
+.chat-image {
+    cursor: zoom-in;
+    transition: transform 0.2s ease;
+}
+
+.chat-image:hover {
+    transform: scale(1.02);
+}
+
+.image-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin: 5px 0;
+}
+
+.image-download-btn {
+    text-decoration: none;
+    color: #075e54;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 5px 8px;
+    border-radius: 5px;
+}
+
+.image-download-btn:hover {
+    background: #e5f5ed;
+}
+
+
+/* Preview overlay */
+
+.image-preview-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+
+    background: rgba(0, 0, 0, 0.92);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    padding: 50px 20px;
+}
+
+.image-preview-modal img {
+    max-width: 90%;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.close-image-preview {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+
+    background: transparent;
+    border: none;
+
+    color: white;
+    font-size: 40px;
+
+    cursor: pointer;
+}
+
+#downloadPreviewImage {
+    margin-top: 18px;
+    padding: 10px 20px;
+
+    background: #075e54;
+    color: white;
+
+    text-decoration: none;
+    border-radius: 7px;
+}
