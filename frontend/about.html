@@ -4,54 +4,258 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WhatsApp Chat Viewer – Read and Explore Exported WhatsApp Chats</title>
-  <meta name="description" content="View your exported WhatsApp chat history in a clear, searchable interface. Import your WhatsApp ZIP export to browse messages and supported media privately.">
+  <meta name="description" content="Learn how to export, import, read, search and view your WhatsApp chat archives with WhatsApp Chat Viewer. Created by Raif.">
   <meta name="keywords" content="WhatsApp Chat Viewer, WhatsApp Export Viewer, read WhatsApp chat export, WhatsApp TXT viewer, WhatsApp ZIP viewer, view WhatsApp messages">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="https://whatsapp-chat-viewer-frontend.onrender.com/about.html">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="WhatsApp Chat Viewer">
-  <meta property="og:description" content="Browse your exported WhatsApp conversations and supported attachments in a searchable archive.">
+  <meta property="og:title" content="WhatsApp Chat Viewer – About and User Guide">
+  <meta property="og:description" content="Created by Raif. Learn how to export a WhatsApp chat and view it in a searchable archive.">
   <meta property="og:url" content="https://whatsapp-chat-viewer-frontend.onrender.com/about.html">
   <meta name="theme-color" content="#075e54">
   <style>
-    :root { color-scheme: light; --green:#075e54; --ink:#172b28; --muted:#526763; --bg:#f3f8f6; }
-    * { box-sizing:border-box; }
-    body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:var(--ink); background:var(--bg); line-height:1.6; }
-    header { padding:22px max(6vw,24px); background:#fff; border-bottom:1px solid #e1ebe7; }
-    .brand { max-width:1080px; margin:auto; font-weight:750; color:var(--green); font-size:1.15rem; }
-    main { max-width:900px; margin:64px auto; padding:0 24px; }
-    .hero { background:#fff; border:1px solid #e1ebe7; border-radius:22px; padding:clamp(28px,6vw,58px); box-shadow:0 12px 35px rgba(15,60,48,.06); }
-    .eyebrow { color:var(--green); font-weight:700; letter-spacing:.04em; text-transform:uppercase; font-size:.8rem; }
-    h1 { font-size:clamp(2rem,5vw,3.25rem); line-height:1.12; margin:14px 0 18px; }
-    p { color:var(--muted); font-size:1.08rem; }
-    .cta { display:inline-block; margin-top:16px; padding:13px 22px; border-radius:10px; background:var(--green); color:#fff; text-decoration:none; font-weight:700; }
-    .features { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; margin-top:22px; }
-    .feature { background:#fff; border:1px solid #e1ebe7; border-radius:16px; padding:22px; }
-    h2 { font-size:1.12rem; margin:0 0 8px; }
-    .feature p { font-size:.96rem; margin:0; }
-    .privacy { margin-top:24px; padding:18px 20px; border-left:4px solid var(--green); background:#e8f3ef; border-radius:8px; }
-    .privacy p { margin:0; font-size:.95rem; }
-    footer { text-align:center; color:#647873; padding:24px; font-size:.9rem; }
+    :root {
+      color-scheme: light;
+      --green: #075e54;
+      --green-dark: #064b43;
+      --ink: #172b28;
+      --muted: #526763;
+      --bg: #f3f8f6;
+      --line: #e1ebe7;
+      --white: #fff;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.65;
+    }
+    header {
+      padding: 18px max(6vw, 24px);
+      background: var(--white);
+      border-bottom: 1px solid var(--line);
+    }
+    .brand {
+      max-width: 1080px;
+      margin: auto;
+      font-weight: 800;
+      color: var(--green);
+      font-size: 1.15rem;
+    }
+    main { max-width: 980px; margin: 48px auto; padding: 0 24px; }
+    .hero, .section-card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(15,60,48,.045);
+    }
+    .hero { padding: clamp(28px, 6vw, 56px); }
+    .eyebrow {
+      color: var(--green);
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      font-size: .78rem;
+    }
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.15rem);
+      line-height: 1.12;
+      margin: 12px 0 16px;
+      letter-spacing: -.035em;
+    }
+    h2 { font-size: clamp(1.35rem, 3vw, 1.8rem); line-height: 1.25; margin: 0 0 12px; }
+    h3 { font-size: 1.08rem; margin: 0 0 7px; }
+    p { color: var(--muted); margin: 0 0 14px; }
+    .hero-copy { max-width: 720px; font-size: 1.08rem; }
+    .creator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 8px 13px;
+      border: 1px solid #cfe4dc;
+      border-radius: 999px;
+      background: #edf7f3;
+      color: var(--green-dark);
+      font-weight: 750;
+      font-size: .93rem;
+    }
+    .cta {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      background: var(--green);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 750;
+    }
+    .cta:hover { background: var(--green-dark); }
+    .section-card { margin-top: 22px; padding: clamp(22px, 4vw, 34px); }
+    .section-intro { max-width: 760px; margin-bottom: 22px; }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      counter-reset: step;
+    }
+    .step {
+      position: relative;
+      padding: 20px 20px 18px 66px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: #fbfdfc;
+      counter-increment: step;
+    }
+    .step::before {
+      content: counter(step);
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--green);
+      color: white;
+      font-weight: 800;
+    }
+    .step p { font-size: .96rem; margin: 0; }
+    .step ul { color: var(--muted); margin: 8px 0 0; padding-left: 18px; font-size: .95rem; }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .feature {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: #fbfdfc;
+    }
+    .feature p { font-size: .95rem; margin: 0; }
+    .privacy {
+      margin-top: 22px;
+      padding: 20px 22px;
+      border-left: 4px solid var(--green);
+      background: #e8f3ef;
+      border-radius: 10px;
+    }
+    .privacy p { margin: 0; font-size: .96rem; }
+    .creator-section { text-align: center; }
+    .creator-name { color: var(--green); font-size: 1.35rem; font-weight: 850; margin: 4px 0 5px; }
+    footer {
+      text-align: center;
+      color: #647873;
+      padding: 26px 24px;
+      font-size: .9rem;
+    }
+    @media (max-width: 680px) {
+      main { margin: 28px auto; }
+      .steps { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <header><div class="brand">WhatsApp Chat Viewer</div></header>
+
   <main>
     <section class="hero">
-      <div class="eyebrow">Personal chat archive</div>
+      <div class="eyebrow">About the project</div>
       <h1>Read and explore your exported WhatsApp chats</h1>
-      <p>WhatsApp Chat Viewer helps you browse a WhatsApp chat export in a clear, searchable interface. Import your exported ZIP file, explore conversation history, and open supported attachments from your archive.</p>
+      <p class="hero-copy">
+        WhatsApp Chat Viewer is a web-based archive viewer that helps you read and organize
+        WhatsApp conversations you have exported from your own account. Import an export ZIP,
+        browse messages in a chat-style interface, search conversations, and open supported
+        attachments included in the archive.
+      </p>
+      <div class="creator">Created and developed by Raif</div>
+      <br>
       <a class="cta" href="/login.html">Open the chat viewer</a>
     </section>
-    <section class="features" aria-label="Features">
-      <article class="feature"><h2>Browse conversations</h2><p>Read exported messages in a chat-style layout and move between imported conversations.</p></article>
-      <article class="feature"><h2>Search and filter</h2><p>Find messages using text search, sender filters and date filters.</p></article>
-      <article class="feature"><h2>View attachments</h2><p>Open and download supported images, videos, audio files and documents included in your export.</p></article>
+
+    <section class="section-card" aria-labelledby="how-to">
+      <div class="section-intro">
+        <div class="eyebrow">Quick user guide</div>
+        <h2 id="how-to">How to use WhatsApp Chat Viewer</h2>
+        <p>Follow these steps to export a conversation from WhatsApp and view it in your archive.</p>
+      </div>
+
+      <div class="steps">
+        <article class="step">
+          <h3>Export a chat from WhatsApp</h3>
+          <p>On your phone, open the individual or group conversation you want to archive. Open the chat menu, choose <strong>Export chat</strong>, and select whether to include media.</p>
+        </article>
+
+        <article class="step">
+          <h3>Save the exported file</h3>
+          <p>Save or transfer the exported ZIP file to the device you will use to access the Chat Viewer. Including media can make the export file larger.</p>
+        </article>
+
+        <article class="step">
+          <h3>Sign in to your account</h3>
+          <p>Open WhatsApp Chat Viewer, create an account or sign in, and go to the chat viewer dashboard.</p>
+        </article>
+
+        <article class="step">
+          <h3>Import your chat ZIP</h3>
+          <p>Choose the import option, select the WhatsApp exported ZIP file, review the detected chat in the preview, and confirm the import.</p>
+        </article>
+
+        <article class="step">
+          <h3>Read and explore messages</h3>
+          <p>Open the imported conversation from your dashboard. Read the messages in the chat-style view and move between your imported conversations.</p>
+        </article>
+
+        <article class="step">
+          <h3>Search and open attachments</h3>
+          <p>Use text search, sender filters, and date filters to find messages. Open or download supported media and documents that were included in the export.</p>
+        </article>
+      </div>
     </section>
+
+    <section class="section-card" aria-labelledby="features-title">
+      <div class="eyebrow">What you can do</div>
+      <h2 id="features-title">Features</h2>
+      <div class="features">
+        <article class="feature">
+          <h3>Browse conversations</h3>
+          <p>Read exported messages in a chat-style layout and move between imported conversations.</p>
+        </article>
+        <article class="feature">
+          <h3>Search and filter</h3>
+          <p>Find messages using text search, sender filters, and date filters.</p>
+        </article>
+        <article class="feature">
+          <h3>View supported attachments</h3>
+          <p>Open or download supported images, videos, audio files, and documents included in your export.</p>
+        </article>
+        <article class="feature">
+          <h3>Access your own archive</h3>
+          <p>Sign in to access the chats associated with your account. Your imported archive can be accessed from another device after signing in.</p>
+        </article>
+      </div>
+    </section>
+
     <section class="privacy">
-      <p><strong>Private accounts:</strong> Sign in to access your own imported archives. Conversations and attachments are intended to remain separated by account. Only import chat exports you are authorised to access.</p>
+      <p><strong>Privacy and responsible use:</strong> Imported conversations are associated with the account used to import them. Account-based access controls are intended to keep each user's archives separate. Only import conversations and media that you are authorised to access. Avoid using a shared or public device to access private archives.</p>
+    </section>
+
+    <section class="section-card creator-section">
+      <div class="eyebrow">The creator</div>
+      <div class="creator-name">Raif</div>
+      <p>WhatsApp Chat Viewer is an independent project created and developed by Raif to make exported chat archives easier to read, search, and manage.</p>
+      <a class="cta" href="/login.html">Try WhatsApp Chat Viewer</a>
     </section>
   </main>
-  <footer>WhatsApp Chat Viewer is an independent archive-viewing tool and is not affiliated with WhatsApp or Meta.</footer>
+
+  <footer>
+    WhatsApp Chat Viewer is an independent archive-viewing tool and is not affiliated with or officially endorsed by WhatsApp or Meta.
+  </footer>
 </body>
 </html>
