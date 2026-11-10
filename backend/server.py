@@ -23,7 +23,16 @@ from backend.registry import load_user_chats
 
 
 app = Flask(__name__)
-CORS(app)
+CORS(
+    app,
+    resources={
+        r"/api/*": {
+            "origins": [
+                "https://whatsapp-chat-viewer-frontend.onrender.com"
+            ]
+        }
+    }
+)
 
 # ==========================================
 # PROJECT DIRECTORY
