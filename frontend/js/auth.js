@@ -22,7 +22,7 @@ const statusMessage = document.getElementById("status");
 let isRegisterMode = false;
 
 // Redirect destination after authentication
-const APP_URL = `${window.location.origin}/frontend/index.html`;
+const APP_URL = `${window.location.origin}/index.html`;
 
 
 // ==========================================
