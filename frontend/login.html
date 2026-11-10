@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | WhatsApp Chat Viewer</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: #f0f2f5;
+            font-family: Arial, sans-serif;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            padding: 32px;
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            text-align: center;
+            font-size: 25px;
+        }
+
+        .subtitle {
+            margin-bottom: 25px;
+            color: #667085;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px;
+            margin-bottom: 14px;
+            border: 1px solid #d0d5dd;
+            border-radius: 7px;
+            font-size: 15px;
+        }
+
+        button {
+            width: 100%;
+            padding: 13px;
+            margin-bottom: 12px;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .primary-btn {
+            background: #075e54;
+            color: white;
+        }
+
+        .google-btn,
+        .secondary-btn {
+            background: white;
+            border: 1px solid #d0d5dd;
+            color: #222;
+        }
+
+        .divider {
+            margin: 15px 0;
+            text-align: center;
+            color: #888;
+        }
+
+        .switch-text {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .switch-text button {
+            width: auto;
+            margin: 0;
+            padding: 0;
+            color: #075e54;
+            background: none;
+        }
+
+        #status {
+            margin-top: 15px;
+            font-size: 14px;
+            text-align: center;
+            overflow-wrap: anywhere;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="login-card">
+
+        <h1>WhatsApp Chat Viewer</h1>
+
+        <p class="subtitle">
+            Sign in to access your personal chat archive
+        </p>
+
+        <button id="googleBtn" class="google-btn">
+            Continue with Google
+        </button>
+
+        <div class="divider">OR</div>
+
+        <form id="authForm">
+
+            <input
+                type="email"
+                id="email"
+                placeholder="Email address"
+                autocomplete="email"
+                required
+            >
+
+            <input
+                type="password"
+                id="password"
+                placeholder="Password"
+                autocomplete="current-password"
+                required
+                minlength="6"
+            >
+
+            <button
+                type="submit"
+                id="submitBtn"
+                class="primary-btn"
+            >
+                Sign in
+            </button>
+
+        </form>
+
+        <button id="magicLinkBtn" class="secondary-btn">
+            Sign in with email link
+        </button>
+
+        <p class="switch-text">
+            <span id="switchLabel">New user?</span>
+
+            <button id="switchModeBtn" type="button">
+                Create account
+            </button>
+        </p>
+
+        <p id="status" role="status" aria-live="polite"></p>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+
+</body>
+</html>

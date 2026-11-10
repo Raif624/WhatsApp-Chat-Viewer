@@ -9,8 +9,8 @@
    1. API CONFIGURATION
 ========================================== */
 
-const API_BASE_URL = "http://127.0.0.1:5000";
 
+const API_BASE_URL = "http://10.53.4.210:5000";
 
 /* ==========================================
    2. SELECT MAIN HTML ELEMENTS
@@ -37,6 +37,25 @@ let selectedChatName = null;
 
 
 /* ==========================================
+   AUTHENTICATION HELPER
+========================================== */
+
+async function getAuthHeaders() {
+    const { data, error } =
+        await window.supabaseClient.auth.getSession();
+
+    if (error || !data.session) {
+        window.location.href = "login.html";
+        throw new Error("Authentication required. Please log in.");
+    }
+
+    return {
+        "Authorization": `Bearer ${data.session.access_token}`
+    };
+}
+
+
+/* ==========================================
    4. LOAD ALL CONVERSATIONS
 ========================================== */
 
@@ -44,7 +63,12 @@ async function loadChats() {
     try {
         console.log("Loading conversations...");
 
-        const response = await fetch(`${API_BASE_URL}/api/chats`);
+        const response = await fetch(
+            `${API_BASE_URL}/api/chats`,
+            {
+                headers: await getAuthHeaders()
+            }
+        );
 
         if (!response.ok) {
             throw new Error(`Unable to load chats: ${response.status}`);
@@ -140,7 +164,10 @@ async function loadSelectedChat(chatId) {
         console.log("Loading selected conversation:", chatId);
 
         const response = await fetch(
-            `${API_BASE_URL}/api/chats/${encodeURIComponent(chatId)}`
+            `${API_BASE_URL}/api/chats/${encodeURIComponent(chatId)}`,
+            {
+                headers: await getAuthHeaders()
+            }
         );
 
         if (!response.ok) {
@@ -252,14 +279,68 @@ function getMediaURL(filename) {
 }
 
 
+// Media routes require a bearer token. HTML media elements and ordinary
+// anchor links cannot attach that token, so fetch the file and use a Blob URL.
+const mediaObjectURLCache = new Map();
+
+async function getAuthenticatedMediaObjectURL(filename) {
+    if (!selectedChatId) {
+        throw new Error("No conversation is selected.");
+    }
+
+    const cacheKey = `${selectedChatId}/${filename}`;
+
+    if (mediaObjectURLCache.has(cacheKey)) {
+        return mediaObjectURLCache.get(cacheKey);
+    }
+
+    const response = await fetch(getMediaURL(filename), {
+        headers: await getAuthHeaders()
+    });
+
+    if (!response.ok) {
+        throw new Error(`Unable to load attachment: ${response.status}`);
+    }
+
+    const mediaBlob = await response.blob();
+    const objectURL = URL.createObjectURL(mediaBlob);
+    mediaObjectURLCache.set(cacheKey, objectURL);
+
+    return objectURL;
+}
+
+
+async function openAuthenticatedMedia(filename) {
+    const objectURL = await getAuthenticatedMediaObjectURL(filename);
+    window.open(objectURL, "_blank", "noopener");
+}
+
+
 function createDownloadLink(url, filename) {
     const link = document.createElement("a");
 
-    // Flask sends Content-Disposition: attachment for this URL.
-    link.href = `${url}?download=1`;
-    link.download = filename;
+    link.href = "#";
     link.className = "media-download-btn";
     link.textContent = "⬇ Download";
+
+    link.addEventListener("click", async function(event) {
+        event.preventDefault();
+
+        try {
+            const objectURL =
+                await getAuthenticatedMediaObjectURL(filename);
+
+            const downloadLink = document.createElement("a");
+            downloadLink.href = objectURL;
+            downloadLink.download = filename;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            downloadLink.remove();
+        } catch (error) {
+            console.error("Attachment download error:", error);
+            alert(error.message || "Unable to download this attachment.");
+        }
+    });
 
     return link;
 }
@@ -306,11 +387,20 @@ function createDocumentCard(filename, type, url) {
     actions.className = "document-actions";
 
     const openLink = document.createElement("a");
-    openLink.href = url;
-    openLink.target = "_blank";
-    openLink.rel = "noopener noreferrer";
+    openLink.href = "#";
     openLink.textContent = "Open";
     openLink.className = "document-open-btn";
+
+    openLink.addEventListener("click", async function(event) {
+        event.preventDefault();
+
+        try {
+            await openAuthenticatedMedia(filename);
+        } catch (error) {
+            console.error("Attachment open error:", error);
+            alert(error.message || "Unable to open this attachment.");
+        }
+    });
 
     actions.appendChild(openLink);
     actions.appendChild(createDownloadLink(url, filename));
@@ -376,14 +466,24 @@ function createMessageBubble(message) {
         if (["jpg", "jpeg", "png", "gif", "webp"].includes(extension)) {
             const image = document.createElement("img");
 
-            image.src = mediaURL;
             image.alt = filename;
             image.className = "chat-image";
             image.loading = "lazy";
 
             image.addEventListener("click", function() {
-                openImagePreview(mediaURL, filename);
+                openImagePreview(filename);
             });
+
+            getAuthenticatedMediaObjectURL(filename)
+                .then(objectURL => {
+                    image.src = objectURL;
+                })
+                .catch(error => {
+                    console.error("Image loading error:", error);
+                    image.replaceWith(
+                        createUnavailableMessage(`Image unavailable: ${filename}`)
+                    );
+                });
 
             image.addEventListener("error", function() {
                 image.replaceWith(
@@ -400,7 +500,6 @@ function createMessageBubble(message) {
         else if (["mp4", "3gp", "mov", "webm"].includes(extension)) {
             const video = document.createElement("video");
 
-            video.src = mediaURL;
             video.controls = true;
             video.preload = "metadata";
             video.playsInline = true;
@@ -414,6 +513,17 @@ function createMessageBubble(message) {
                 );
             });
 
+            getAuthenticatedMediaObjectURL(filename)
+                .then(objectURL => {
+                    video.src = objectURL;
+                })
+                .catch(error => {
+                    console.error("Video loading error:", error);
+                    video.replaceWith(
+                        createUnavailableMessage(`Video unavailable: ${filename}`)
+                    );
+                });
+
             bubble.appendChild(video);
             bubble.appendChild(createFilenameLabel(filename));
             bubble.appendChild(createDownloadLink(mediaURL, filename));
@@ -426,7 +536,6 @@ function createMessageBubble(message) {
             const audioTitle = createFilenameLabel(`🎤 ${filename}`);
 
             const audio = document.createElement("audio");
-            audio.src = mediaURL;
             audio.controls = true;
             audio.preload = "metadata";
             audio.className = "chat-audio";
@@ -435,6 +544,16 @@ function createMessageBubble(message) {
                 audioTitle.textContent =
                     `Audio cannot be played in this browser: ${filename}`;
             });
+
+            getAuthenticatedMediaObjectURL(filename)
+                .then(objectURL => {
+                    audio.src = objectURL;
+                })
+                .catch(error => {
+                    console.error("Audio loading error:", error);
+                    audioTitle.textContent =
+                        `Audio unavailable: ${filename}`;
+                });
 
             bubble.appendChild(audioTitle);
             bubble.appendChild(audio);
@@ -603,24 +722,32 @@ const downloadPreviewImage =
     document.getElementById("downloadPreviewImage");
 
 
-function openImagePreview(imageURL, filename) {
-    if (
-        !imagePreviewModal ||
-        !previewImage ||
-        !downloadPreviewImage
-    ) {
-        // Fallback if the preview modal has not been added to index.html.
-        window.open(imageURL, "_blank", "noopener");
-        return;
+async function openImagePreview(filename) {
+    try {
+        const objectURL =
+            await getAuthenticatedMediaObjectURL(filename);
+
+        if (
+            !imagePreviewModal ||
+            !previewImage ||
+            !downloadPreviewImage
+        ) {
+            // Open the already-authenticated Blob URL as a fallback.
+            window.open(objectURL, "_blank", "noopener");
+            return;
+        }
+
+        previewImage.src = objectURL;
+        previewImage.alt = filename;
+
+        downloadPreviewImage.href = objectURL;
+        downloadPreviewImage.download = filename;
+
+        imagePreviewModal.classList.remove("hidden");
+    } catch (error) {
+        console.error("Image preview error:", error);
+        alert(error.message || "Unable to preview this image.");
     }
-
-    previewImage.src = imageURL;
-    previewImage.alt = filename;
-
-    downloadPreviewImage.href = `${imageURL}?download=1`;
-    downloadPreviewImage.download = filename;
-
-    imagePreviewModal.classList.remove("hidden");
 }
 
 
@@ -736,6 +863,7 @@ if (previewZipBtn) {
                 `${API_BASE_URL}/api/import/preview`,
                 {
                     method: "POST",
+                    headers: await getAuthHeaders(),
                     body: formData
                 }
             );
@@ -810,6 +938,7 @@ if (confirmImportBtn) {
                 `${API_BASE_URL}/api/import/confirm`,
                 {
                     method: "POST",
+                    headers: await getAuthHeaders(),
                     body: formData
                 }
             );
@@ -847,3 +976,150 @@ if (confirmImportBtn) {
 ========================================== */
 
 loadChats();
+
+
+
+/* ==========================================
+   SETTINGS MENU AND SUPABASE LOGOUT
+========================================== */
+
+const settingsBtn = document.getElementById("settingsBtn");
+
+if (settingsBtn) {
+    // Give the existing gear button an accessible label and menu state.
+    settingsBtn.setAttribute("aria-label", "Settings");
+    settingsBtn.setAttribute("aria-haspopup", "menu");
+    settingsBtn.setAttribute("aria-expanded", "false");
+
+    // Add menu styling without requiring changes to the existing CSS file.
+    if (!document.getElementById("settingsMenuStyles")) {
+        const settingsStyle = document.createElement("style");
+        settingsStyle.id = "settingsMenuStyles";
+        settingsStyle.textContent = `
+            .settings-menu {
+                position: absolute;
+                top: calc(100% + 8px);
+                right: 0;
+                z-index: 1000;
+                min-width: 190px;
+                padding: 8px;
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 10px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+            }
+            .settings-menu[hidden] {
+                display: none;
+            }
+            .settings-menu-title {
+                padding: 8px 10px;
+                color: #64748b;
+                font-size: 12px;
+                font-weight: 600;
+            }
+            .settings-logout-btn {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                width: 100%;
+                padding: 10px;
+                border: 0;
+                border-radius: 7px;
+                background: transparent;
+                color: #b42318;
+                font: inherit;
+                text-align: left;
+                cursor: pointer;
+            }
+            .settings-logout-btn:hover {
+                background: #fef2f2;
+            }
+            .settings-logout-btn:disabled {
+                opacity: 0.6;
+                cursor: wait;
+            }
+            .sidebar-actions {
+                position: relative;
+            }
+        `;
+        document.head.appendChild(settingsStyle);
+    }
+
+    const settingsMenu = document.createElement("div");
+    settingsMenu.id = "settingsMenu";
+    settingsMenu.className = "settings-menu";
+    settingsMenu.setAttribute("role", "menu");
+    settingsMenu.hidden = true;
+
+    const menuTitle = document.createElement("div");
+    menuTitle.className = "settings-menu-title";
+    menuTitle.textContent = "Account";
+
+    const logoutBtn = document.createElement("button");
+    logoutBtn.type = "button";
+    logoutBtn.className = "settings-logout-btn";
+    logoutBtn.setAttribute("role", "menuitem");
+    logoutBtn.innerHTML = '<span aria-hidden="true">↪</span><span>Log out</span>';
+
+    settingsMenu.append(menuTitle, logoutBtn);
+
+    const settingsContainer =
+        settingsBtn.closest(".sidebar-actions") || settingsBtn.parentElement;
+    settingsContainer.appendChild(settingsMenu);
+
+    function closeSettingsMenu() {
+        settingsMenu.hidden = true;
+        settingsBtn.setAttribute("aria-expanded", "false");
+    }
+
+    settingsBtn.addEventListener("click", function(event) {
+        event.stopPropagation();
+        const shouldOpen = settingsMenu.hidden;
+        settingsMenu.hidden = !shouldOpen;
+        settingsBtn.setAttribute("aria-expanded", String(shouldOpen));
+    });
+
+    settingsMenu.addEventListener("click", function(event) {
+        event.stopPropagation();
+    });
+
+    document.addEventListener("click", function(event) {
+        if (!settingsContainer.contains(event.target)) {
+            closeSettingsMenu();
+        }
+    });
+
+    document.addEventListener("keydown", function(event) {
+        if (event.key === "Escape") {
+            closeSettingsMenu();
+        }
+    });
+
+    logoutBtn.addEventListener("click", async function() {
+        logoutBtn.disabled = true;
+        logoutBtn.querySelector("span:last-child").textContent = "Logging out...";
+
+        try {
+            const { error } = await window.supabaseClient.auth.signOut();
+
+            if (error) {
+                throw error;
+            }
+
+            // Clear any cached authenticated media URLs from this page.
+            if (typeof mediaObjectURLCache !== "undefined") {
+                for (const objectURL of mediaObjectURLCache.values()) {
+                    URL.revokeObjectURL(objectURL);
+                }
+                mediaObjectURLCache.clear();
+            }
+
+            window.location.replace("login.html");
+        } catch (error) {
+            console.error("Logout error:", error);
+            alert(error.message || "Unable to log out. Please try again.");
+            logoutBtn.disabled = false;
+            logoutBtn.querySelector("span:last-child").textContent = "Log out";
+        }
+    });
+}
