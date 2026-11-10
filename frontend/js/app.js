@@ -10,7 +10,7 @@
 ========================================== */
 
 
-const API_BASE_URL = "http://10.53.4.210:5000";
+const API_BASE_URL = "https://whatsapp-chat-viewer-psx8.onrender.com";
 
 /* ==========================================
    2. SELECT MAIN HTML ELEMENTS
