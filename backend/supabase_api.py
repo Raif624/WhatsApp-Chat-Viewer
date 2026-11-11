@@ -41,6 +41,9 @@ def upload_user_media(access_token, storage_path, file_path):
     if not SUPABASE_URL:
         raise RuntimeError("Supabase URL is missing.")
 
+    # Defensive check: never send an oversized object to the Free-plan bucket.
+    if os.path.getsize(file_path) > 50 * 1024 * 1024:
+        raise ValueError("Media file exceeds Supabase Free's 50 MB per-object limit.")
     content_type = mimetypes.guess_type(str(file_path))[0] or "application/octet-stream"
     headers = {
         **get_supabase_headers(access_token),

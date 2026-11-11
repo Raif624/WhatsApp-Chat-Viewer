@@ -3,21 +3,20 @@ from backend.registry import register_user_chat
 from backend.supabase_api import upload_user_media, delete_user_media
 
 import shutil
+import os
 import uuid
 import zipfile
 
 from pathlib import Path, PurePosixPath
 
 
-# Maximum allowed uncompressed ZIP size: 500 MB
-MAX_TOTAL_SIZE = 500 * 1024 * 1024
-
-# Maximum allowed individual file size: 100 MB
-# Supabase Storage bucket limit is currently 50 MB per object.
+# Conservative defaults for Render Free; tune only after load testing.
+MAX_ZIP_SIZE = int(os.getenv("MAX_ZIP_UPLOAD_MB", "256")) * 1024 * 1024
+MAX_TOTAL_SIZE = int(os.getenv("MAX_EXTRACTED_MB", "1024")) * 1024 * 1024
+# Supabase Free Storage: do not increase this beyond the bucket's 50 MB cap.
 MAX_FILE_SIZE = 50 * 1024 * 1024
-
-# Maximum number of files inside the ZIP
-MAX_FILES = 2000
+MAX_TEXT_SIZE = 100 * 1024 * 1024
+MAX_FILES = 5000
 
 
 MEDIA_EXTENSIONS = {
@@ -39,12 +38,18 @@ def inspect_whatsapp_zip(zip_path):
     if not zip_path.exists():
         raise FileNotFoundError("ZIP file not found.")
 
+    if zip_path.stat().st_size > MAX_ZIP_SIZE:
+        raise ValueError(f"ZIP upload exceeds the {MAX_ZIP_SIZE // (1024 * 1024)} MB limit.")
+
     if not zipfile.is_zipfile(zip_path):
         raise ValueError("The selected file is not a valid ZIP archive.")
 
     with zipfile.ZipFile(zip_path, "r") as archive:
         files = []
         total_size = 0
+        skipped_media = []
+        supported_media = []
+        seen_paths = set()
 
         for item in archive.infolist():
             if item.is_dir():
@@ -63,12 +68,14 @@ def inspect_whatsapp_zip(zip_path):
             ):
                 raise ValueError("Unsafe file path detected in ZIP.")
 
-            # Reject symbolic links.
-            if (item.external_attr >> 16) & 0o170000 == 0o120000:
-                raise ValueError("Symbolic links are not allowed.")
+            if safe_name in seen_paths:
+                raise ValueError("Duplicate file paths are not allowed in ZIP.")
+            seen_paths.add(safe_name)
 
-            if item.file_size > MAX_FILE_SIZE:
-                raise ValueError("A file exceeds the allowed size.")
+            # Reject symbolic links.
+            file_type = (item.external_attr >> 16) & 0o170000
+            if file_type not in (0, 0o100000):
+                raise ValueError("Non-regular files and symbolic links are not allowed.")
 
             total_size += item.file_size
             if total_size > MAX_TOTAL_SIZE:
@@ -90,12 +97,16 @@ def inspect_whatsapp_zip(zip_path):
             )
 
         chat_file = text_files[0]
+        if chat_file.file_size > MAX_TEXT_SIZE:
+            raise ValueError("Conversation text file exceeds the 100 MB safety limit.")
 
-        # Identify supported media files.
+        # Media exceeding Supabase Free's 50 MB cap is skipped, not extracted.
         media_files = [
             item for item in files
             if PurePosixPath(item.filename).suffix.lower() in MEDIA_EXTENSIONS
         ]
+        supported_media = [item for item in media_files if item.file_size <= MAX_FILE_SIZE]
+        skipped_media = [item.filename for item in media_files if item.file_size > MAX_FILE_SIZE]
 
         chat_name = PurePosixPath(chat_file.filename).stem
         if chat_name.startswith("WhatsApp Chat with "):
@@ -105,8 +116,11 @@ def inspect_whatsapp_zip(zip_path):
             "chat_name": chat_name,
             "text_filename": chat_file.filename,
             "text_size": chat_file.file_size,
-            "media_count": len(media_files),
-            "media_files": [item.filename for item in media_files],
+            "media_count": len(supported_media),
+            "media_files": [item.filename for item in supported_media],
+            "skipped_media_count": len(skipped_media),
+            "skipped_media_files": skipped_media[:100],
+            "warnings": ([f"{len(skipped_media)} attachment(s) exceed 50 MB and will be skipped. Their message text will still be imported."] if skipped_media else []),
             "total_files": len(files),
             "total_size": total_size,
             "ready_for_import": True
@@ -152,6 +166,8 @@ def import_whatsapp_zip(zip_path, user_id, access_token):
                 if extension == ".txt":
                     destination = chat_folder / "chat.txt"
                 elif extension in MEDIA_EXTENSIONS:
+                    if item.file_size > MAX_FILE_SIZE:
+                        continue
                     # Use only the filename, never the ZIP's directory path.
                     safe_name = original_path.name
                     destination = media_folder / safe_name
@@ -201,15 +217,20 @@ def import_whatsapp_zip(zip_path, user_id, access_token):
             access_token
         )
 
-        return {
+        result = {
             "chat_id": chat_id,
             "chat_name": preview["chat_name"],
             "chat_folder": str(chat_folder),
             "chat_file": str(chat_folder / "chat.txt"),
             "media_folder": str(media_folder),
             "media_count": preview["media_count"],
+            "skipped_media_count": preview["skipped_media_count"],
+            "skipped_media_files": preview["skipped_media_files"],
+            "warnings": preview["warnings"],
             "status": "imported"
         }
+        shutil.rmtree(chat_folder, ignore_errors=True)
+        return result
 
     except Exception:
         # Remove uploaded objects if parsing or database registration fails.

@@ -13,6 +13,8 @@ from flask_cors import CORS
 from pathlib import Path
 import json
 import uuid
+import os
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from backend.auth import require_authentication
 from backend.importer import (
@@ -23,6 +25,13 @@ from backend.registry import load_user_chats
 
 
 app = Flask(__name__)
+# Multipart overhead is included; importer separately checks actual ZIP size.
+app.config["MAX_CONTENT_LENGTH"] = (int(os.getenv("MAX_ZIP_UPLOAD_MB", "256")) + 2) * 1024 * 1024
+
+@app.errorhandler(RequestEntityTooLarge)
+def upload_too_large(error):
+    return jsonify({"status": "error", "message": "Upload is larger than the configured ZIP limit."}), 413
+
 CORS(
     app,
     resources={
@@ -256,7 +265,9 @@ def confirm_import():
 
         return jsonify({
             "status": "success",
-            "message": "Conversation imported successfully!",
+            "message": "Conversation imported successfully!" + (" Some oversized attachments were skipped." if result.get("skipped_media_count") else ""),
+            "warnings": result.get("warnings", []),
+            "skipped_media_count": result.get("skipped_media_count", 0),
             "chat": result
         }), 201
 
