@@ -1,4 +1,9 @@
-from backend.supabase_api import get_user_chat_messages, download_user_media
+import requests
+
+from backend.supabase_api import (
+    get_user_chat_messages, download_user_media, delete_chat_media,
+    get_supabase_headers, get_supabase_rest_url
+)
 
 from flask import (
     Flask,
@@ -168,6 +173,57 @@ def get_chat_messages(chat_id):
             "message": "Unable to load chat messages."
         }), 500
 
+
+
+
+
+# ==========================================
+# DELETE ONE USER-OWNED CONVERSATION
+# ==========================================
+
+@app.route("/api/chats/<chat_id>", methods=["DELETE"])
+@require_authentication
+def delete_chat(chat_id):
+    selected_chat = find_user_chat(chat_id)
+    if selected_chat is None:
+        return jsonify({"status": "error", "message": "Chat not found."}), 404
+
+    try:
+        deleted_media_count = delete_chat_media(
+            g.access_token, g.user_id, chat_id
+        )
+        headers = get_supabase_headers(g.access_token)
+
+        messages_response = requests.delete(
+            get_supabase_rest_url("messages"),
+            headers=headers,
+            params={"chat_id": f"eq.{selected_chat['id']}"},
+            timeout=60,
+        )
+        messages_response.raise_for_status()
+
+        chat_response = requests.delete(
+            get_supabase_rest_url("chats"),
+            headers=headers,
+            params={
+                "id": f"eq.{selected_chat['id']}",
+                "user_id": f"eq.{g.user_id}",
+            },
+            timeout=30,
+        )
+        chat_response.raise_for_status()
+
+        return jsonify({
+            "status": "success",
+            "message": "Conversation deleted successfully.",
+            "deleted_media_count": deleted_media_count,
+        })
+    except Exception:
+        app.logger.exception("Unable to delete conversation")
+        return jsonify({
+            "status": "error",
+            "message": "Unable to completely delete this conversation. Please retry or check backend logs.",
+        }), 500
 
 
 # ==========================================

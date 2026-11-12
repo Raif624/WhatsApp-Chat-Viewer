@@ -132,3 +132,48 @@ def get_user_chat_messages(access_token, chat_uuid):
         start += batch_size
 
     return all_messages
+
+
+def delete_chat_media(access_token, user_id, chat_id):
+    """Delete all private Storage objects in one user's chat folder."""
+    prefix = f"{user_id}/{chat_id}"
+    headers = get_supabase_headers(access_token)
+    list_url = f"{SUPABASE_URL}/storage/v1/object/list/{MEDIA_BUCKET}"
+    object_paths = []
+    offset = 0
+    page_size = 100
+
+    while True:
+        response = requests.post(
+            list_url,
+            headers={**headers, "Content-Type": "application/json"},
+            json={
+                "prefix": prefix,
+                "limit": page_size,
+                "offset": offset,
+                "sortBy": {"column": "name", "order": "asc"},
+            },
+            timeout=30,
+        )
+        response.raise_for_status()
+        items = response.json()
+
+        for item in items:
+            name = item.get("name")
+            if name:
+                object_paths.append(f"{prefix}/{name}")
+
+        if len(items) < page_size:
+            break
+        offset += page_size
+
+    for start in range(0, len(object_paths), 100):
+        response = requests.delete(
+            f"{SUPABASE_URL}/storage/v1/object/{MEDIA_BUCKET}",
+            headers={**headers, "Content-Type": "application/json"},
+            json={"prefixes": object_paths[start:start + 100]},
+            timeout=60,
+        )
+        response.raise_for_status()
+
+    return len(object_paths)

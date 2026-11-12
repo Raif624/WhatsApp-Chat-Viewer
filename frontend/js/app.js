@@ -122,6 +122,8 @@ function renderChatList() {
     allChats.forEach(function(chat) {
         const chatItem = document.createElement("div");
         chatItem.className = "chat-item";
+        chatItem.style.position = "relative";
+        chatItem.style.paddingRight = "52px";
 
         if (chat.chat_id === selectedChatId) {
             chatItem.classList.add("active");
@@ -143,8 +145,23 @@ function renderChatList() {
         chatInfo.appendChild(name);
         chatInfo.appendChild(preview);
 
+        const menuButton = document.createElement("button");
+        menuButton.type = "button";
+        menuButton.className = "chat-delete-menu-btn";
+        menuButton.textContent = "⋮";
+        menuButton.title = `Delete ${chat.chat_name || "chat"}`;
+        menuButton.setAttribute("aria-label", `Delete ${chat.chat_name || "chat"}`);
+        menuButton.style.cssText = "position:absolute;right:12px;top:50%;transform:translateY(-50%);width:34px;height:36px;border:0;border-radius:8px;background:transparent;color:#52606d;font-size:24px;line-height:1;cursor:pointer;z-index:2;";
+        menuButton.addEventListener("mouseenter", () => { menuButton.style.background = "#e9eef2"; });
+        menuButton.addEventListener("mouseleave", () => { menuButton.style.background = "transparent"; });
+        menuButton.addEventListener("click", async function(event) {
+            event.stopPropagation();
+            await deleteChat(chat);
+        });
+
         chatItem.appendChild(avatar);
         chatItem.appendChild(chatInfo);
+        chatItem.appendChild(menuButton);
 
         chatItem.addEventListener("click", function() {
             loadSelectedChat(chat.chat_id);
@@ -152,6 +169,49 @@ function renderChatList() {
 
         chatList.appendChild(chatItem);
     });
+}
+
+async function deleteChat(chat) {
+    const chatName = chat.chat_name || "this conversation";
+    const confirmed = window.confirm(
+        `Permanently delete "${chatName}"?\n\nThis removes its messages and uploaded media from your account. This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+        const headers = await getAuthHeaders();
+        const response = await fetch(
+            `${API_BASE_URL}/api/chats/${encodeURIComponent(chat.chat_id)}`,
+            { method: "DELETE", headers }
+        );
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(data.message || `Delete failed (HTTP ${response.status}).`);
+        }
+
+        // Revoke cached object URLs for this conversation.
+        for (const [key, objectURL] of mediaObjectURLCache.entries()) {
+            if (key.startsWith(`${chat.chat_id}/`)) {
+                URL.revokeObjectURL(objectURL);
+                mediaObjectURLCache.delete(key);
+            }
+        }
+
+        if (selectedChatId === chat.chat_id) {
+            selectedChatId = null;
+            selectedChatName = null;
+            chatMessages = [];
+        }
+
+        await loadChats();
+        if (!allChats.length) {
+            messageContainer.textContent = "No conversations imported yet.";
+        }
+        alert(data.message || `"${chatName}" was deleted.`);
+    } catch (error) {
+        console.error("Delete chat error:", error);
+        alert(error.message || "Unable to delete this conversation.");
+    }
 }
 
 
