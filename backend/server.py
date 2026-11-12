@@ -162,6 +162,63 @@ def get_chat_messages(chat_id):
 
 
 # ==========================================
+# DELETE A CONVERSATION FOR THE CURRENT USER
+# ==========================================
+
+@app.route("/api/chats/<chat_id>", methods=["DELETE"])
+@require_authentication
+def delete_chat(chat_id):
+    """
+    Permanently delete one conversation and its messages.
+    Ownership is verified before any deletion; RLS provides a second layer.
+    """
+    selected_chat = find_user_chat(chat_id)
+
+    if selected_chat is None:
+        return jsonify({
+            "status": "error",
+            "message": "Chat not found."
+        }), 404
+
+    try:
+        from backend.registry import delete_user_chat_records
+        from backend.supabase_api import delete_user_chat_media
+
+        # Remove private media objects first. If this fails, keep the chat
+        # record intact so the user can retry rather than lose references.
+        delete_user_chat_media(
+            g.access_token,
+            g.user_id,
+            chat_id
+        )
+
+        delete_user_chat_records(
+            g.access_token,
+            g.user_id,
+            selected_chat["id"]
+        )
+
+        # Remove any local copy if one exists; Render's filesystem is ephemeral.
+        chat_folder = get_user_chat_folder(g.user_id, chat_id)
+        if chat_folder.exists():
+            import shutil
+            shutil.rmtree(chat_folder)
+
+        return jsonify({
+            "status": "success",
+            "message": "Conversation deleted successfully.",
+            "chat_id": chat_id
+        })
+
+    except Exception:
+        app.logger.exception("Unable to delete conversation")
+        return jsonify({
+            "status": "error",
+            "message": "Unable to delete this conversation. Please try again."
+        }), 500
+
+
+# ==========================================
 # PREVIEW WHATSAPP ZIP FILE
 # ==========================================
 

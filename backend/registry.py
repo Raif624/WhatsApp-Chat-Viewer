@@ -202,3 +202,35 @@ def register_user_chat(
         raise
 
     return inserted_chats[0]
+
+
+def delete_user_chat_records(access_token, user_id, database_chat_id):
+    """Delete messages, then the owned chat row, using the user's JWT and RLS."""
+    headers = get_supabase_headers(access_token)
+
+    message_response = requests.delete(
+        get_supabase_rest_url("messages"),
+        headers=headers,
+        params={"chat_id": f"eq.{database_chat_id}"},
+        timeout=60
+    )
+    message_response.raise_for_status()
+
+    chat_response = requests.delete(
+        get_supabase_rest_url("chats"),
+        headers=headers,
+        params={
+            "id": f"eq.{database_chat_id}",
+            "user_id": f"eq.{user_id}"
+        },
+        timeout=60
+    )
+    chat_response.raise_for_status()
+
+    if chat_response.status_code == 204:
+        return True
+
+    deleted_rows = chat_response.json() if chat_response.content else []
+    if not deleted_rows:
+        raise RuntimeError("The conversation could not be deleted.")
+    return True

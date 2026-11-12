@@ -116,6 +116,49 @@ async function loadChats() {
    5. DISPLAY CHAT LIST IN SIDEBAR
 ========================================== */
 
+async function deleteChat(chatId, chatName) {
+    const confirmed = window.confirm(
+        `Delete "${chatName}" and all its messages and attachments? This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/api/chats/${encodeURIComponent(chatId)}`,
+            {
+                method: "DELETE",
+                headers: await getAuthHeaders()
+            }
+        );
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(data.message || `Delete failed (${response.status}).`);
+        }
+
+        // Clear cached attachment URLs for the deleted conversation.
+        for (const [key, objectURL] of mediaObjectURLCache.entries()) {
+            if (key.startsWith(`${chatId}/`)) {
+                URL.revokeObjectURL(objectURL);
+                mediaObjectURLCache.delete(key);
+            }
+        }
+
+        if (selectedChatId === chatId) {
+            selectedChatId = null;
+            selectedChatName = null;
+            chatMessages = [];
+        }
+
+        await loadChats();
+        alert("Chat deleted successfully.");
+    } catch (error) {
+        console.error("Chat deletion error:", error);
+        alert(error.message || "Unable to delete this chat.");
+    }
+}
+
+
 function renderChatList() {
     chatList.replaceChildren();
 
@@ -145,6 +188,31 @@ function renderChatList() {
 
         chatItem.appendChild(avatar);
         chatItem.appendChild(chatInfo);
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "delete-chat-btn";
+        deleteButton.textContent = "🗑";
+        deleteButton.title = "Delete chat";
+        deleteButton.setAttribute("aria-label", `Delete ${chat.chat_name || "chat"}`);
+        deleteButton.style.cssText = [
+            "margin-left:auto",
+            "border:0",
+            "background:transparent",
+            "color:#d9534f",
+            "cursor:pointer",
+            "font-size:17px",
+            "padding:8px",
+            "border-radius:6px",
+            "flex-shrink:0"
+        ].join(";");
+
+        deleteButton.addEventListener("click", function(event) {
+            event.stopPropagation();
+            deleteChat(chat.chat_id, chat.chat_name || "this chat");
+        });
+
+        chatItem.appendChild(deleteButton);
 
         chatItem.addEventListener("click", function() {
             loadSelectedChat(chat.chat_id);
