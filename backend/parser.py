@@ -37,7 +37,7 @@ OTHER_SENDER_LABEL = "Imdad Cse Junior"
 
 MESSAGE_PATTERN = re.compile(
     r"^(\d{1,2}/\d{1,2}/\d{2,4}),\s*"
-    r"(\d{1,2}:\d{2}\s*[APap][Mm])\s*-\s*(.*)$"
+    r"(\d{1,2}:\d{2}(?:\s*[APap][Mm])?)\s*-\s*(.*)$"
 )
 
 
@@ -47,7 +47,6 @@ MESSAGE_PATTERN = re.compile(
 
 def convert_datetime(date_text, time_text):
 
-    # Normalize special Unicode spaces
     time_text = (
         time_text
         .replace("\u202f", " ")
@@ -58,18 +57,15 @@ def convert_datetime(date_text, time_text):
     datetime_text = date_text + " " + time_text
 
     formats = [
-        "%m/%d/%y %I:%M %p",
-        "%m/%d/%Y %I:%M %p"
+        "%d/%m/%Y %H:%M",
+        "%d/%m/%y %H:%M",
+        "%d/%m/%Y %I:%M %p",
+        "%d/%m/%y %I:%M %p",
     ]
 
     for fmt in formats:
-
         try:
-            result = datetime.strptime(
-                datetime_text,
-                fmt
-            )
-
+            result = datetime.strptime(datetime_text, fmt)
             return result.isoformat(timespec="minutes")
 
         except ValueError:
