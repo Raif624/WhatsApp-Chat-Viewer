@@ -185,19 +185,31 @@ def import_whatsapp_zip(zip_path, user_id, access_token):
                     with open(destination, "wb") as target:
                         shutil.copyfileobj(source, target)
 
-        # Upload extracted media to the private Supabase Storage bucket.
-        # Each user's objects are isolated under: user_id/chat_id/filename
-        for media_file in media_folder.iterdir():
-            if media_file.is_file():
-                storage_path = (
-                    f"{safe_user_id}/{chat_id}/{media_file.name}"
-                )
-                upload_user_media(
-                    access_token,
-                    storage_path,
-                    media_file
-                )
-                uploaded_storage_paths.append(storage_path)
+        # Upload to the private bucket with limited concurrency.
+        # A small pool shortens total request time without flooding Supabase.
+        # Each user's objects remain isolated under user_id/chat_id/filename.
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        media_files = [item for item in media_folder.iterdir() if item.is_file()]
+
+        def upload_one(media_file):
+            storage_path = f"{safe_user_id}/{chat_id}/{media_file.name}"
+            upload_user_media(access_token, storage_path, media_file)
+            return storage_path
+
+        upload_error = None
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            futures = [executor.submit(upload_one, item) for item in media_files]
+            for future in as_completed(futures):
+                try:
+                    uploaded_storage_paths.append(future.result())
+                except Exception as error:
+                    upload_error = upload_error or error
+                    for pending in futures:
+                        pending.cancel()
+
+        if upload_error is not None:
+            raise upload_error
 
         # Parse the extracted WhatsApp TXT file.
         messages = parse_and_save_chat(

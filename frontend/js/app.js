@@ -893,8 +893,13 @@ if (previewZipBtn) {
             uploadSection.classList.add("hidden");
             previewSection.classList.remove("hidden");
 
+            const previewWarnings = Array.isArray(currentImportPreview.warnings)
+                ? currentImportPreview.warnings.join(" ")
+                : "";
+
             importStatus.textContent =
-                "ZIP inspection successful. Review before importing.";
+                "ZIP inspection successful. Review before importing." +
+                (previewWarnings ? " Warning: " + previewWarnings : "");
         } catch (error) {
             console.error("ZIP preview error:", error);
             importStatus.textContent = error.message;
@@ -928,7 +933,8 @@ if (confirmImportBtn) {
         confirmImportBtn.disabled = true;
 
         importStatus.textContent =
-            "Importing conversation. Please wait...";
+            "Importing conversation and uploading media (3 files at a time). " +
+            "This may take several minutes. Keep this tab open.";
 
         try {
             const formData = new FormData();
@@ -943,13 +949,18 @@ if (confirmImportBtn) {
                 }
             );
 
-            const data = await response.json();
+            const data = await response.json().catch(() => ({}));
 
             if (!response.ok) {
-                throw new Error(data.message || "Import failed.");
+                throw new Error(
+                    data.message || `Import failed (HTTP ${response.status}).`
+                );
             }
 
-            importStatus.textContent = data.message || "Import successful.";
+            const skippedCount = Number(data.skipped_media_count || 0);
+            importStatus.textContent =
+                (data.message || "Import successful.") +
+                (skippedCount ? ` ${skippedCount} oversized attachment(s) were skipped.` : "");
 
             console.log("Imported conversation:", data.chat);
 

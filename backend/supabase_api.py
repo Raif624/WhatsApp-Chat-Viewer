@@ -56,7 +56,9 @@ def upload_user_media(access_token, storage_path, file_path):
             _storage_object_url(storage_path),
             headers=headers,
             data=media_file,
-            timeout=120,
+            # Separate connection and read timeouts; Gunicorn's request timeout
+            # is configured separately in the Render start command.
+            timeout=(15, 120),
         )
 
     response.raise_for_status()
