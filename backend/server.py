@@ -1,9 +1,4 @@
-import requests
-
-from backend.supabase_api import (
-    get_user_chat_messages, download_user_media, delete_chat_media,
-    get_supabase_headers, get_supabase_rest_url
-)
+from backend.supabase_api import get_user_chat_messages, download_user_media
 
 from flask import (
     Flask,
@@ -18,8 +13,6 @@ from flask_cors import CORS
 from pathlib import Path
 import json
 import uuid
-import os
-from werkzeug.exceptions import RequestEntityTooLarge
 
 from backend.auth import require_authentication
 from backend.importer import (
@@ -30,13 +23,6 @@ from backend.registry import load_user_chats
 
 
 app = Flask(__name__)
-# Multipart overhead is included; importer separately checks actual ZIP size.
-app.config["MAX_CONTENT_LENGTH"] = (int(os.getenv("MAX_ZIP_UPLOAD_MB", "256")) + 2) * 1024 * 1024
-
-@app.errorhandler(RequestEntityTooLarge)
-def upload_too_large(error):
-    return jsonify({"status": "error", "message": "Upload is larger than the configured ZIP limit."}), 413
-
 CORS(
     app,
     resources={
@@ -175,57 +161,6 @@ def get_chat_messages(chat_id):
 
 
 
-
-
-# ==========================================
-# DELETE ONE USER-OWNED CONVERSATION
-# ==========================================
-
-@app.route("/api/chats/<chat_id>", methods=["DELETE"])
-@require_authentication
-def delete_chat(chat_id):
-    selected_chat = find_user_chat(chat_id)
-    if selected_chat is None:
-        return jsonify({"status": "error", "message": "Chat not found."}), 404
-
-    try:
-        deleted_media_count = delete_chat_media(
-            g.access_token, g.user_id, chat_id
-        )
-        headers = get_supabase_headers(g.access_token)
-
-        messages_response = requests.delete(
-            get_supabase_rest_url("messages"),
-            headers=headers,
-            params={"chat_id": f"eq.{selected_chat['id']}"},
-            timeout=60,
-        )
-        messages_response.raise_for_status()
-
-        chat_response = requests.delete(
-            get_supabase_rest_url("chats"),
-            headers=headers,
-            params={
-                "id": f"eq.{selected_chat['id']}",
-                "user_id": f"eq.{g.user_id}",
-            },
-            timeout=30,
-        )
-        chat_response.raise_for_status()
-
-        return jsonify({
-            "status": "success",
-            "message": "Conversation deleted successfully.",
-            "deleted_media_count": deleted_media_count,
-        })
-    except Exception:
-        app.logger.exception("Unable to delete conversation")
-        return jsonify({
-            "status": "error",
-            "message": "Unable to completely delete this conversation. Please retry or check backend logs.",
-        }), 500
-
-
 # ==========================================
 # PREVIEW WHATSAPP ZIP FILE
 # ==========================================
@@ -313,17 +248,18 @@ def confirm_import():
     try:
         uploaded_file.save(temp_path)
 
+        exported_by = request.form.get("exported_by", "").strip() or None
+
         result = import_whatsapp_zip(
             temp_path,
             g.user_id,
-            g.access_token
+            g.access_token,
+            exported_by=exported_by
         )
 
         return jsonify({
             "status": "success",
-            "message": "Conversation imported successfully!" + (" Some oversized attachments were skipped." if result.get("skipped_media_count") else ""),
-            "warnings": result.get("warnings", []),
-            "skipped_media_count": result.get("skipped_media_count", 0),
+            "message": "Conversation imported successfully!",
             "chat": result
         }), 201
 

@@ -1,4 +1,4 @@
-from backend.parser import parse_and_save_chat
+from backend.parser import parse_and_save_chat, extract_participants_from_lines
 from backend.registry import register_user_chat
 from backend.supabase_api import upload_user_media, delete_user_media
 
@@ -6,6 +6,7 @@ import shutil
 import os
 import uuid
 import zipfile
+import io
 
 from pathlib import Path, PurePosixPath
 
@@ -100,6 +101,16 @@ def inspect_whatsapp_zip(zip_path):
         if chat_file.file_size > MAX_TEXT_SIZE:
             raise ValueError("Conversation text file exceeds the 100 MB safety limit.")
 
+        # Detect sender labels from the TXT itself. These are the names that
+        # appear before each message in the WhatsApp export.
+        with archive.open(chat_file, "r") as text_stream:
+            text_reader = io.TextIOWrapper(
+                text_stream,
+                encoding="utf-8-sig",
+                errors="replace"
+            )
+            participants = extract_participants_from_lines(text_reader)
+
         # Media exceeding Supabase Free's 50 MB cap is skipped, not extracted.
         media_files = [
             item for item in files
@@ -114,6 +125,7 @@ def inspect_whatsapp_zip(zip_path):
 
         return {
             "chat_name": chat_name,
+            "participants": participants,
             "text_filename": chat_file.filename,
             "text_size": chat_file.file_size,
             "media_count": len(supported_media),
@@ -127,7 +139,7 @@ def inspect_whatsapp_zip(zip_path):
         }
 
 
-def import_whatsapp_zip(zip_path, user_id, access_token):
+def import_whatsapp_zip(zip_path, user_id, access_token, exported_by=None):
     """Extract, parse, and register a conversation for one authenticated user."""
 
     if not user_id or not access_token:
@@ -141,6 +153,21 @@ def import_whatsapp_zip(zip_path, user_id, access_token):
 
     # Inspect the ZIP before extracting anything.
     preview = inspect_whatsapp_zip(zip_path)
+
+    participants = preview.get("participants", [])
+    if participants:
+        if not exported_by:
+            raise ValueError(
+                "Please select which participant's phone exported this conversation."
+            )
+        if exported_by not in participants:
+            raise ValueError(
+                "The selected exporter does not match a participant detected in this ZIP. Please preview the ZIP again."
+            )
+    elif exported_by:
+        raise ValueError(
+            "No message senders were detected in this export, so the exporter cannot be verified."
+        )
 
     chat_id = "chat_" + uuid.uuid4().hex[:8]
 
@@ -214,7 +241,8 @@ def import_whatsapp_zip(zip_path, user_id, access_token):
         # Parse the extracted WhatsApp TXT file.
         messages = parse_and_save_chat(
             chat_folder / "chat.txt",
-            chat_folder / "chat.json"
+            chat_folder / "chat.json",
+            my_sender_label=exported_by
         )
 
         # Register chat metadata and messages under the authenticated user.
@@ -222,6 +250,8 @@ def import_whatsapp_zip(zip_path, user_id, access_token):
             {
                 "chat_id": chat_id,
                 "chat_name": preview["chat_name"],
+            "exported_by": exported_by,
+            "participants": participants,
                 "chat_folder": str(chat_folder)
             },
             messages,

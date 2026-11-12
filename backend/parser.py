@@ -95,10 +95,44 @@ def classify_message(message):
 
 
 # ==========================================
+# 5A. DETECT PARTICIPANTS IN A WHATSAPP EXPORT
+# ==========================================
+
+def extract_participants_from_lines(lines):
+    """Return unique sender labels in first-seen order."""
+    participants = []
+    seen = set()
+
+    for line in lines:
+        match = MESSAGE_PATTERN.match(line.rstrip("\\r\\n"))
+        if not match:
+            continue
+
+        content = match.group(3)
+        if ": " not in content:
+            continue
+
+        sender = content.split(": ", 1)[0].strip()
+        if not sender or sender in seen:
+            continue
+
+        seen.add(sender)
+        participants.append(sender)
+
+    return participants
+
+
+def extract_participants(file_path):
+    """Read a WhatsApp TXT export and detect its message senders."""
+    with open(file_path, "r", encoding="utf-8-sig") as file:
+        return extract_participants_from_lines(file)
+
+
+# ==========================================
 # 6. CREATE MESSAGE OBJECT
 # ==========================================
 
-def create_message(date_text, time_text, content, my_sender_label="?"):
+def create_message(date_text, time_text, content, my_sender_label=None):
 
     timestamp = convert_datetime(
         date_text,
@@ -110,7 +144,7 @@ def create_message(date_text, time_text, content, my_sender_label="?"):
 
         sender, message_text = content.split(": ", 1)
 
-        if sender == my_sender_label:
+        if my_sender_label is not None and sender.strip() == my_sender_label.strip():
 
             sender_name = "You"
             is_mine = True
@@ -144,7 +178,7 @@ def create_message(date_text, time_text, content, my_sender_label="?"):
 # 7. READ AND PARSE CHAT FILE
 # ==========================================
 
-def parse_chat(file_path, my_sender_label="?"):
+def parse_chat(file_path, my_sender_label=None):
 
     messages = []
     current_message = None
@@ -221,7 +255,7 @@ def save_json(messages, output_file):
 # 9. PARSE AND SAVE ANY CONVERSATION
 # ==========================================
 
-def parse_and_save_chat(input_file, output_file, my_sender_label="?"):
+def parse_and_save_chat(input_file, output_file, my_sender_label=None):
 
     input_file = Path(input_file)
     output_file = Path(output_file)
